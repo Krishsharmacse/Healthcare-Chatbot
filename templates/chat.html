@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Medical Chatbot</title>
+	<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+	<!-- Marked.js for Markdown parsing -->
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css')}}">
+	<style>
+		.disclaimer {
+			font-size: 11px;
+			color: rgba(255,255,255,0.7);
+			margin-top: 6px;
+			display: block;
+		}
+		.fade-in {
+			animation: fadeIn 0.5s;
+		}
+		@keyframes fadeIn {
+			from { opacity: 0; }
+			to { opacity: 1; }
+		}
+	</style>
+</head>
+<body>
+	<div class="container-fluid h-100">
+		<div class="row justify-content-center h-100">		
+			<div class="col-md-8 col-xl-6 chat">
+				<div class="card shadow-lg">
+					<div class="card-header msg_head">
+						<div class="d-flex bd-highlight">
+							<div class="img_cont">
+								<img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img">
+								<span class="online_icon"></span>
+							</div>
+							<div class="user_info">
+								<span>Medical Chatbot</span>
+								<p>Ask me anything related to health!</p>
+							</div>
+						</div>
+					</div>
+					<div id="messageFormeight" class="card-body msg_card_body"></div>
+					
+					<div class="card-footer">
+						<form id="messageArea" class="input-group">
+							<input type="text" id="text" name="msg" placeholder="Type your message..." autocomplete="off" class="form-control type_msg" required/>
+							<div class="input-group-append">
+								<button type="submit" id="send" class="input-group-text send_btn"><i class="fas fa-paper-plane"></i></button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		$(document).ready(function() {
+			$("#messageArea").on("submit", function(event) {
+				event.preventDefault();
+
+				const date = new Date();
+				const time = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+				var rawText = $("#text").val();
+
+				// User message
+				var userHtml = `
+					<div class="d-flex justify-content-end mb-4 fade-in">
+						<div class="msg_cotainer_send">
+							${rawText}
+							<span class="msg_time_send">${time}</span>
+						</div>
+						<div class="img_cont_msg">
+							<img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg">
+						</div>
+					</div>`;
+				
+				$("#text").val("");
+				$("#messageFormeight").append(userHtml);
+				$("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+
+				// Bot reply
+				$.ajax({
+					data: { msg: rawText },
+					type: "POST",
+					url: "/get",
+				}).done(function(data) {
+					// Convert Markdown to HTML
+					var formattedData = marked.parse(data);
+
+					var disclaimer = "<div class='disclaimer'>⚠️ Disclaimer: This advice is based on medical references and AI analysis. Please consult a licensed physician before starting any treatment.</div>";
+					var botHtml = `
+						<div class="d-flex justify-content-start mb-4 fade-in">
+							<div class="img_cont_msg">
+								<img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img_msg">
+							</div>
+							<div class="msg_cotainer">
+								${formattedData}
+								${disclaimer}
+								<span class="msg_time">${time}</span>
+							</div>
+						</div>`;
+					
+					$("#messageFormeight").append(botHtml);
+					$("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+				});
+			});
+		});
+	</script>
+</body>
+</html>
